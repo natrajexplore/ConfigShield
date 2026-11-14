@@ -1,0 +1,39 @@
+rules_version = '2';
+// ConfigShield: each user may only read/write their own SANITIZED audit reports.
+// The raw config, the sanitized config and the token vault are never stored: the
+// field allow-list rejects any document that tries to add them, and every field
+// is type- and size-checked so a modified client cannot smuggle a config in.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid}/audits/{auditId} {
+      function isOwner() {
+        return request.auth != null && request.auth.uid == uid;
+      }
+      function validReport(d) {
+        return d.keys().hasOnly([
+                 'vendor', 'score', 'summary', 'findings', 'findingCount', 'auditSource',
+                 'redactionSource', 'tokensMasked', 'mode', 'cloudChars', 'createdAt', 'schema'])
+          && d.keys().hasAll(['vendor', 'score', 'summary', 'findings', 'createdAt'])
+          && d.vendor is string && d.vendor.size() <= 80
+          && d.score is int && d.score >= 0 && d.score <= 100
+          && d.summary is string && d.summary.size() < 4000
+          && d.findings is list && d.findings.size() <= 50
+          && (!('findingCount' in d) || (d.findingCount is int && d.findingCount >= 0 && d.findingCount <= 100))
+          && (!('auditSource' in d) || d.auditSource in ['in_cloud', 'on_device', 'local_rules', 'skipped'])
+          && (!('redactionSource' in d) || d.redactionSource in ['on_device', 'skipped'])
+          && (!('tokensMasked' in d) || (d.tokensMasked is int && d.tokensMasked >= 0))
+          && (!('mode' in d) || d.mode in ['hybrid', 'local', 'cloud'])
+          && (!('cloudChars' in d) || (d.cloudChars is int && d.cloudChars >= 0))
+          && (!('schema' in d) || d.schema is int)
+          && d.createdAt == request.time;
+      }
+      allow read: if isOwner();
+      allow create: if isOwner() && validReport(request.resource.data);
+      allow delete: if isOwner();
+      allow update: if false;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

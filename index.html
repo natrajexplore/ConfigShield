@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ConfigShield — privacy-first network config auditor. Secrets are redacted on-device with Gemini Nano before any cloud AI sees the config." />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0b1020" />
+    <title>ConfigShield — Hybrid AI Network Config Auditor</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path d='M16 2 4 7v8c0 7.5 5.1 13.6 12 15 6.9-1.4 12-7.5 12-15V7z' fill='%2322c55e'/></svg>" />
+  </head>
+  <body>
+    <a class="skip" href="#raw">Skip to the configuration input</a>
+    <header class="topbar">
+      <div class="brand">
+        <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M16 2 4 7v8c0 7.5 5.1 13.6 12 15 6.9-1.4 12-7.5 12-15V7z" fill="currentColor"/></svg>
+        <div>
+          <h1>ConfigShield</h1>
+          <p>Your configs stay on your device. Only sanitized text ever reaches the cloud.</p>
+        </div>
+      </div>
+      <div class="status" aria-label="Environment status">
+        <span id="nano-chip" class="chip" title="Chrome Prompt API (Gemini Nano) availability">Gemini Nano: checking…</span>
+        <span id="net-chip" class="chip">Network: …</span>
+        <span id="rc-chip" class="chip" title="Firebase Remote Config">Config: …</span>
+        <span id="auth-chip" class="chip">Auth: …</span>
+      </div>
+    </header>
+
+    <section class="boundary" aria-label="Privacy boundary">
+      <div class="zone device">
+        <span class="zone-label">This device</span>
+        <ol class="flow">
+          <li data-flow="0">Raw config</li>
+          <li data-flow="1">Rules redaction</li>
+          <li data-flow="2">Gemini Nano</li>
+          <li data-flow="3">Leak gate</li>
+          <li data-flow="5">Vault &amp; re-hydration</li>
+        </ol>
+      </div>
+      <div class="wall" aria-hidden="true"><span>privacy boundary</span></div>
+      <div class="zone cloud">
+        <span class="zone-label">Cloud</span>
+        <ol class="flow"><li data-flow="4">Gemini deep audit</li></ol>
+        <p id="receipt" class="receipt">Sanitized text only. Never secrets, IPs or names.</p>
+      </div>
+    </section>
+
+    <main class="grid">
+      <section class="panel" aria-labelledby="in-h">
+        <div class="panel-head">
+          <h2 id="in-h">1 · Paste a device configuration</h2>
+          <div class="row">
+            <label class="sr-only" for="sample">Load a sample configuration</label>
+            <select id="sample" class="ghost">
+              <option value="">Load sample…</option>
+              <option value="ios">Cisco IOS-XE branch switch</option>
+              <option value="asa">Cisco ASA edge firewall</option>
+              <option value="pan">Palo Alto PAN-OS (set)</option>
+              <option value="junos">Juniper SRX Junos (set)</option>
+              <option value="forti">Fortinet FortiGate</option>
+            </select>
+            <label class="ghost file">Open file<input id="file" type="file" accept=".cfg,.txt,.conf,.log,.set,text/plain" hidden /></label>
+            <button id="clear" class="ghost" type="button" title="Clear the input, the report and the in-memory vault">Clear</button>
+          </div>
+        </div>
+        <div class="drop" id="drop">
+          <textarea id="raw" spellcheck="false" aria-describedby="raw-meta" placeholder="show running-config output, PAN-OS 'set' commands, Junos 'set' format, FortiOS config…&#10;&#10;Tip: drop a file here, or press Ctrl+Enter to run."></textarea>
+        </div>
+        <p id="raw-meta" class="muted meta-line">0 lines · 0 chars · nothing is sent until you press Redact &amp; audit</p>
+        <div class="controls">
+          <fieldset class="modes">
+            <legend class="sr-only">Inference mode</legend>
+            <label title="Rules + Gemini Nano redaction on-device, deep audit with cloud Gemini (falls back on-device)"><input type="radio" name="mode" value="hybrid" checked /> Hybrid <small>(recommended)</small></label>
+            <label title="Everything stays on this machine: Gemini Nano does the audit"><input type="radio" name="mode" value="local" /> Air-gapped <small>(on-device only)</small></label>
+            <label title="No Gemini Nano: rules and a strict free-text scrub, then cloud audit"><input type="radio" name="mode" value="cloud" /> Cloud <small>(rules-only redaction)</small></label>
+          </fieldset>
+          <div class="row">
+            <button id="prep" class="ghost" type="button">Prepare on-device model</button>
+            <button id="cancel" class="ghost danger" type="button" hidden>Cancel</button>
+            <button id="run" class="primary" type="button" aria-keyshortcuts="Control+Enter">Redact &amp; audit</button>
+          </div>
+        </div>
+        <progress id="dl" max="1" value="0" hidden aria-label="Gemini Nano download progress"></progress>
+        <ol id="stages" class="stages" aria-live="polite" aria-label="Pipeline stages"></ol>
+      </section>
+
+      <section class="panel" aria-labelledby="out-h">
+        <div class="panel-head">
+          <h2 id="out-h">2 · Audit report</h2>
+          <div class="row">
+            <label class="toggle"><input id="reveal" type="checkbox" /> Reveal real values (local only)</label>
+            <button id="save" class="ghost" type="button" disabled>Save sanitized report</button>
+            <button id="script" class="ghost" type="button" disabled title="Copy every fix as one change script">Copy fix script</button>
+            <button id="export" class="ghost" type="button" disabled>Export .md</button>
+          </div>
+        </div>
+        <div id="viewing" class="viewing" hidden></div>
+        <div id="summary" class="summary empty">
+          <div>
+            <p><strong>Run an audit to see findings.</strong></p>
+            <p class="muted">Pick a sample above, then press <kbd>Redact &amp; audit</kbd>. Every stage shows where it ran: <span class="src src-local_rules">LOCAL · rules</span> <span class="src src-on_device">ON-DEVICE · Gemini Nano</span> <span class="src src-in_cloud">CLOUD · Gemini</span></p>
+          </div>
+        </div>
+        <div id="filters" class="filters" role="toolbar" aria-label="Filter findings by severity" hidden></div>
+        <div id="findings" class="findings"></div>
+        <details class="sanitized">
+          <summary>What the cloud model actually saw (sanitized config)</summary>
+          <div class="row end"><button id="copy-sanitized" class="ghost small" type="button">Copy sanitized config</button></div>
+          <pre id="sanitized"></pre>
+        </details>
+        <details class="vaultview">
+          <summary>Redaction map (local only — never sent or stored)</summary>
+          <div id="vault-table" class="table-wrap"><p class="muted">Run an audit to see what was masked.</p></div>
+        </details>
+        <details class="history" id="history-details">
+          <summary>Saved reports (Firestore)</summary>
+          <ul id="history"></ul>
+        </details>
+      </section>
+    </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+    <footer class="foot">
+      Built with Firebase AI Logic hybrid inference · Gemini Nano on-device + Gemini in the cloud · App Check · Auth · Firestore · Remote Config ·
+      <a href="https://github.com/natrajexplore/ConfigShield" rel="noopener noreferrer" target="_blank">Source (Apache-2.0)</a>
+    </footer>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,25 @@
+# FICTITIOUS SAMPLE — all names, IPs and secrets are made up for demo purposes.
+set deviceconfig system hostname CHN-DC-PA01
+set deviceconfig system domain dc.northwind-health.example
+set deviceconfig system ip-address 203.0.113.20
+set deviceconfig system netmask 255.255.255.0
+set deviceconfig system default-gateway 203.0.113.1
+set deviceconfig system login-banner "Northwind Health Chennai DC - authorised staff only"
+set deviceconfig system service disable-telnet no
+set deviceconfig system service disable-http no
+set mgt-config users admin phash $1$abcdefgh$Hk3s9dP0aQwL2mVx7yZ1t.
+set mgt-config users admin permissions role-based superuser yes
+set network interface ethernet ethernet1/1 layer3 ip 198.51.100.10/29
+set network interface ethernet ethernet1/1 comment "ISP: Tata Comm circuit 045CHEN88812 - contact Arjun 9840012345"
+set network interface ethernet ethernet1/2 layer3 ip 10.50.0.1/24
+set zone untrust network layer3 ethernet1/1
+set zone trust network layer3 ethernet1/2
+set network ike gateway BRANCH-GW authentication pre-shared-key key Nw@Ike!2026
+set network ike crypto-profiles ike-crypto-profiles weak-ike encryption 3des
+set network ike crypto-profiles ike-crypto-profiles weak-ike hash sha1
+set network ike crypto-profiles ike-crypto-profiles weak-ike dh-group group2
+set rulebase security rules ALLOW-ALL from any to any source any destination any application any service any action allow
+set rulebase security rules ALLOW-ALL log-end no
+set rulebase security rules RDP-IN from untrust to trust destination 10.50.0.25 application ms-rdp service application-default action allow
+set deviceconfig system snmp-setting access-setting version v2c snmp-community-string Nw-public
+set deviceconfig system ntp-servers primary-ntp-server ntp-server-address 192.0.2.10

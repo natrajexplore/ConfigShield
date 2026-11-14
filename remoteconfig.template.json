@@ -1,0 +1,30 @@
+{
+  "conditions": [],
+  "parameters": {
+    "cloud_model": {
+      "defaultValue": { "value": "gemini-3.5-flash-lite" },
+      "description": "Cloud Gemini model used for the deep audit (swap without redeploying).",
+      "valueType": "STRING"
+    },
+    "enable_cloud_audit": {
+      "defaultValue": { "value": "true" },
+      "description": "Kill switch: false forces every audit to run on-device.",
+      "valueType": "BOOLEAN"
+    },
+    "on_device_chunk_chars": {
+      "defaultValue": { "value": "12000" },
+      "description": "Max characters per Gemini Nano prompt chunk (on-device limit is 9216 tokens).",
+      "valueType": "NUMBER"
+    },
+    "audit_policy_pack": {
+      "defaultValue": { "value": "baseline-v1" },
+      "description": "Policy pack name passed to the auditor prompt.",
+      "valueType": "STRING"
+    },
+    "max_findings": {
+      "defaultValue": { "value": "25" },
+      "description": "Upper bound on findings shown per audit.",
+      "valueType": "NUMBER"
+    }
+  }
+}

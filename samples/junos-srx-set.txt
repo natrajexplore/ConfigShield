@@ -1,0 +1,32 @@
+# FICTITIOUS SAMPLE — all names, IPs and secrets are made up for demo purposes.
+set version 23.4R1
+set system host-name HYD-SRX-01
+set system domain-name hyd.woodgrove-bank.example
+set system root-authentication encrypted-password "$6$k1Lm2Nop$Qr7sTuvWxyZ0aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789abcdEFGhijKLmnoPQRstuVWXyz0123./"
+set system login user ops-admin class super-user
+set system login user ops-admin authentication encrypted-password "$1$aB3dE6gH$yZ8xW7vU6tS5rQ4pO3nM2."
+set system services telnet
+set system services web-management http interface ge-0/0/1.0
+set system services ssh root-login allow
+set system radius-server 10.60.0.15 secret "$9$hZ0cyKoJGjqP5Qn9tO1EhrlKvL"
+set system ntp server 192.0.2.10
+set system syslog host 10.60.0.30 any any
+set snmp location "Woodgrove Bank, Hitech City Tower B, Hyderabad"
+set snmp contact "Kiran Reddy +91 40 5555 0101"
+set snmp community public authorization read-only
+set interfaces ge-0/0/0 description "Internet - BSNL leased line 4410HYD77812 - Woodgrove Madhapur"
+set interfaces ge-0/0/0 unit 0 family inet address 203.0.113.130/30
+set interfaces ge-0/0/1 unit 0 family inet address 10.60.0.1/24
+set security zones security-zone untrust interfaces ge-0/0/0.0
+set security zones security-zone trust interfaces ge-0/0/1.0
+set security ike proposal WEAK-P1 authentication-method pre-shared-keys
+set security ike proposal WEAK-P1 dh-group group2
+set security ike proposal WEAK-P1 authentication-algorithm md5
+set security ike proposal WEAK-P1 encryption-algorithm 3des-cbc
+set security ike policy IKE-POL proposals WEAK-P1
+set security ike policy IKE-POL pre-shared-key ascii-text "$9$Wt8XNbs2aZDkPfQ3n6CuOBIhcl"
+set security ike gateway DR-GW address 198.51.100.77
+set security policies from-zone untrust to-zone trust policy ALLOW-ANY match source-address any
+set security policies from-zone untrust to-zone trust policy ALLOW-ANY match destination-address any
+set security policies from-zone untrust to-zone trust policy ALLOW-ANY match application any
+set security policies from-zone untrust to-zone trust policy ALLOW-ANY then permit

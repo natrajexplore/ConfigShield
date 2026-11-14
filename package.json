@@ -1,0 +1,39 @@
+{
+  "name": "configshield",
+  "version": "0.2.0",
+  "description": "Privacy-first network config auditor: on-device redaction with Gemini Nano, cloud deep audit with Gemini, via Firebase AI Logic hybrid inference.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "deploy": "npm run build && firebase deploy --only hosting,firestore:rules,remoteconfig",
+    "test:watch": "vitest",
+    "check": "tsc --noEmit && vitest run && vite build"
+  },
+  "author": "Nataraj Angappan",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "firebase": "^13.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "typescript": "5.9",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0"
+  },
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.14.7"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/natrajexplore/ConfigShield.git"
+  },
+  "homepage": "https://github.com/natrajexplore/ConfigShield#readme"
+}
