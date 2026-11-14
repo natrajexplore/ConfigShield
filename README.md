@@ -242,6 +242,7 @@ Judges: see [`docs/TESTING.md`](docs/TESTING.md) for a 2-minute walkthrough.
 |---|---|
 | Chip shows **Firebase: not configured (local-only)** | `.env.local` is missing, still holds `.env.example` placeholders, or contains the JS snippet instead of `KEY=value` lines |
 | Stage 3: *"requires the Firebase AI API ('firebasevertexai.googleapis.com') to be enabled"* | Console → **AI Logic** → *Get started* → Gemini Developer API |
+| Stage 3: `[401] Firebase App Check token is invalid` | AI Logic needs a valid App Check token. Register a debug token (row below) and restart `npm run dev` |
 | Console: `AppCheck … HTTP status: 403` | Register the app in **App Check** and add your debug token to *Manage debug tokens* and to `VITE_APPCHECK_DEBUG_TOKEN` |
 | **Auth: offline** / `auth/configuration-not-found` | Console → **Authentication** → *Get started* → enable **Anonymous** |
 | `auth/api-key-not-valid` | The API key is a placeholder or belongs to a different project |

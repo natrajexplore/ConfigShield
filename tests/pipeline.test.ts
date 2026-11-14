@@ -18,7 +18,7 @@ function fakeModel(name: keyof typeof replies) {
   return {
     generateContent: vi.fn(async (prompt: string) => {
       calls.push({ model: name, prompt });
-      const r = replies[name](prompt);
+      const r = await replies[name](prompt);
       if (r instanceof Error) throw r;
       return { response: { text: () => r.text, inferenceSource: r.source } };
     }),
@@ -97,6 +97,38 @@ describe('hybrid pipeline', () => {
     // The redactor saw the rules-sanitized text, never the raw secrets.
     const redactorPrompt = calls.find((c) => c.model === 'redactor')!.prompt;
     expect(redactorPrompt).not.toContain('Sup3rS3cret!');
+  });
+
+  it('ignores Gemini Nano suggestions that are fragments of existing placeholders (real-run regression)', async () => {
+    // Observed live: Nano echoed token internals, which corrupted <SECRET_1> into <<OTHER_1>>
+    // and made the leak gate (correctly, but needlessly) block the cloud audit.
+    replies.redactor = () => ({
+      text: JSON.stringify({
+        items: [
+          { value: 'SECRET_1', kind: 'SECRET' }, { value: 'WEAKSECRET_2', kind: 'SECRET' }, { value: 'IP_PUB_1', kind: 'OTHER' },
+          { value: 'HOST', kind: 'HOST' }, { value: 'LOCATION_1', kind: 'LOCATION' }, { value: 'Priya Raman', kind: 'PERSON' },
+        ],
+      }),
+      source: 'on_device',
+    });
+    const r = await runPipeline(ios, 'hybrid', SETTINGS, new TokenVault(), emit);
+    expect(r.leak.ok).toBe(true);
+    expect(r.sanitized).not.toMatch(/<</);
+    expect(r.sanitized).toContain('enable password 7 <SECRET_1>');
+    expect(r.stats.onDeviceTokens).toBe(1); // only "Priya Raman"
+    expect(r.stats.auditSource).toBe('in_cloud');
+  });
+
+  it('cancels immediately even while an on-device prompt is still running', async () => {
+    replies.redactor = () => ({ text: '{"items":[]}', source: 'on_device' });
+    replies.auditor = () => new Error('cloud down');
+    const ctrl = new AbortController();
+    const hang = new Promise<never>(() => {});
+    replies.local = () => {
+      setTimeout(() => ctrl.abort(), 10);
+      return hang as unknown as Reply; // never resolves, like a stuck Nano session
+    };
+    await expect(runPipeline(ios, 'hybrid', SETTINGS, new TokenVault(), emit, ctrl.signal)).rejects.toThrow(/abort/i);
   });
 
   it('aborts if the redactor ever reports cloud inference', async () => {

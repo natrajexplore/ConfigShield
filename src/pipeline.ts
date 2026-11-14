@@ -75,6 +75,35 @@ function isAbort(e: unknown): boolean {
   return e instanceof DOMException ? e.name === 'AbortError' : e instanceof Error && e.name === 'AbortError';
 }
 
+/**
+ * The SDK honours AbortSignal for cloud requests but not for on-device prompts, so
+ * race every model call against the signal: Cancel then returns immediately.
+ */
+function withAbort<T>(p: Promise<T>, signal?: AbortSignal): Promise<T> {
+  if (!signal) return p;
+  signal.throwIfAborted();
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(signal.reason ?? new DOMException('Aborted', 'AbortError'));
+    signal.addEventListener('abort', onAbort, { once: true });
+    p.then(
+      (v) => {
+        signal.removeEventListener('abort', onAbort);
+        resolve(v);
+      },
+      (e) => {
+        signal.removeEventListener('abort', onAbort);
+        reject(e);
+      },
+    );
+  });
+}
+
+/** Number of <...> groups that are NOT well-formed placeholder tokens. */
+function brokenTokens(s: string): number {
+  const groups = s.match(/<[^<>\n]*>/g) ?? [];
+  return groups.filter((t) => !/^<[A-Z_]+_\d+>$/.test(t)).length + (s.match(/<</g) ?? []).length;
+}
+
 async function onDeviceRedact(
   text: string,
   vault: TokenVault,
@@ -88,9 +117,9 @@ async function onDeviceRedact(
   for (let i = 0; i < chunks.length; i++) {
     signal?.throwIfAborted();
     emit({ stage: 1, status: 'running', source: 'on_device', message: `Gemini Nano scanning chunk ${i + 1}/${chunks.length}…` });
-    const res = await redactor.generateContent(
-      `Configuration excerpt:\n"""\n${chunks[i]}\n"""\nList remaining sensitive values as JSON.`,
-      { signal },
+    const res = await withAbort(
+      redactor.generateContent(`Configuration excerpt:\n"""\n${chunks[i]}\n"""\nList remaining sensitive values as JSON.`, { signal }),
+      signal,
     );
     if (res.response.inferenceSource && res.response.inferenceSource !== 'on_device') {
       // Defence in depth — ONLY_ON_DEVICE should make this impossible.
@@ -102,17 +131,22 @@ async function onDeviceRedact(
       .map((it) => ({ value: it.value.trim(), kind: KIND_MAP[it.kind as PiiKind] ?? 'OTHER' }));
     items.sort((a, b) => b.value.length - a.value.length);
     for (const it of items) {
-      const token = vault.tokenFor(it.value, it.kind, 'on_device');
-      out = replaceIdentifier(out, it.value, token);
+      // Never apply a replacement that would damage an existing placeholder.
+      const probe = replaceIdentifier(out, it.value, '<PROBE_0>');
+      if (probe === out || brokenTokens(probe) > brokenTokens(out)) continue;
+      out = replaceIdentifier(out, it.value, vault.tokenFor(it.value, it.kind, 'on_device'));
     }
   }
   return { text: out, chunks: chunks.length };
 }
 
 async function auditPrompt(model: GenerativeModel, vendor: string, policy: string, text: string, signal?: AbortSignal) {
-  const res = await model.generateContent(
-    `Vendor/platform: ${vendor}\nPolicy pack: ${policy}\nSanitized configuration:\n"""\n${text}\n"""\nReturn the audit as JSON.`,
-    { signal },
+  const res = await withAbort(
+    model.generateContent(
+      `Vendor/platform: ${vendor}\nPolicy pack: ${policy}\nSanitized configuration:\n"""\n${text}\n"""\nReturn the audit as JSON.`,
+      { signal },
+    ),
+    signal,
   );
   return { text: res.response.text(), source: (res.response.inferenceSource ?? 'in_cloud') as Source };
 }

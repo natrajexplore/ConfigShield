@@ -53,10 +53,14 @@ export function acceptCandidate(value: string, chunk: string): boolean {
   const v = value.trim();
   if (v.length < 3 || v.length > 120) return false;
   if (TOKEN_RE.test(v)) return false; // never re-mask an existing placeholder (or text around one)
+  if (/[<>]/.test(v)) return false;
+  // Fragments of placeholders ("SECRET_1", "WEAKSECRET", "IP_PUB") would corrupt tokens when masked.
+  if (/^[A-Z]+(?:_[A-Z]+)*(?:_\d+)?$/.test(v) && /^(?:[A-Z]+_)*(?:SECRET|WEAKSECRET|HASH|KEYBLOCK|IP|PRIV|PUB|IPV6|EMAIL|HOST|DOMAIN|USER|BANNER|ORG|PERSON|LOCATION|SITE|CIRCUIT|PHONE|DESC|OTHER)(?:_[A-Z]+)*(?:_\d+)?$/.test(v)) return false;
   if (KEYWORD_STOPLIST.has(v.toLowerCase())) return false;
   if (/^(?:Gi|Te|Fa|Eth|Po|Vl|Lo|Tu|Hu|Fo)[a-zA-Z]*\d/.test(v)) return false; // interface names
   if (/^\d+$/.test(v)) return false;
-  return chunk.includes(v);
+  // Must occur verbatim in the text that is NOT already a placeholder.
+  return chunk.replace(/<[A-Z_]+_\d+>/g, '\u0000').includes(v);
 }
 
 /** 100 = clean. Deductions are capped per severity so one noisy class can't zero the score. */

@@ -176,6 +176,10 @@ describe('helpers', () => {
     expect(acceptCandidate('<HOST_1>', '<HOST_1>')).toBe(false);
     expect(acceptCandidate('<HOST_1> lab', chunk)).toBe(false); // would swallow an existing token
     expect(acceptCandidate(42 as unknown as string, chunk)).toBe(false);
+    // placeholder fragments seen from real Gemini Nano output
+    const tokenised = 'enable password 7 <SECRET_1>\nsnmp-server community <WEAKSECRET_2> RO\nntp server <IP_PUB_1>';
+    for (const frag of ['SECRET_1', 'WEAKSECRET_2', 'IP_PUB_1', 'WEAKSECRET', 'SECRET', 'IP_PUB', '<SECRET_1']) expect(acceptCandidate(frag, tokenised), frag).toBe(false);
+    expect(acceptCandidate('Treasury', 'description Treasury <HOST_1>')).toBe(true);
   });
   it('chunks on line boundaries and hard-splits pathological lines', () => {
     const c = chunkLines(Array.from({ length: 100 }, (_, i) => `line ${i}`).join('\n'), 100);
