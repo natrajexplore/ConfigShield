@@ -15,6 +15,10 @@
 
 Built for **#BuildHybridAI 2026** · Category: **Web (Chrome)**
 
+### 🔗 [Live demo: configshield.web.app](https://configshield.web.app)
+
+*Chrome Desktop 139+. No login needed. Enable Gemini Nano for the full hybrid flow (see [Quick start](#-quick-start)).*
+
 [Why](#-the-problem) · [How it works](#-how-it-works) · [Features](#-features) · [Quick start](#-quick-start) · [Security model](#-security--privacy-model) · [Testing](#-testing) · [Troubleshooting](#-troubleshooting)
 
 </div>
@@ -132,7 +136,7 @@ Every stage shows a live badge (`LOCAL · rules` / `ON-DEVICE · Gemini Nano` / 
 | Product | Use |
 |---|---|
 | **AI Logic** | Hybrid inference: Gemini Nano on-device plus Gemini in the cloud |
-| **App Check** | Required by AI Logic: reCAPTCHA Enterprise in production, the debug provider for local and judging builds |
+| **App Check** | Required by AI Logic: reCAPTCHA Enterprise on the live site, a debug token for local development |
 | **Authentication** | Anonymous sign-in, so each user gets a private history with no signup. It waits for `authStateReady()`, so the uid survives reloads |
 | **Cloud Firestore** | Stores **sanitized reports only**. [`firestore.rules`](firestore.rules) allow-lists fields and type- and size-checks every one |
 | **Remote Config** | Cloud model name, Nano chunk size, findings cap, policy pack, and a **kill switch** that forces on-device auditing, all without a redeploy |
@@ -189,9 +193,16 @@ VITE_APPCHECK_DEBUG_TOKEN=<the debug token you registered>
 ### Deploy
 ```bash
 cp .firebaserc.example .firebaserc   # set your project id
-npm i -g firebase-tools
+npm i -g firebase-tools && firebase login
+
+# Never ship the App Check debug token: Vite also loads .env.local for production builds,
+# so override it for production (this file is git-ignored).
+printf 'VITE_APPCHECK_DEBUG=false\nVITE_APPCHECK_DEBUG_TOKEN=\n' > .env.production.local
+
 npm run deploy                       # hosting + firestore.rules + Remote Config template
 ```
+
+The deployed site uses **reCAPTCHA Enterprise** for App Check. Add your `*.web.app` and `*.firebaseapp.com` domains to the reCAPTCHA key's allowed domains, and keep `localhost` off that list.
 
 ---
 

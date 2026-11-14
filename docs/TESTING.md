@@ -1,6 +1,6 @@
 # Testing instructions for judges
 
-**Live demo:** `TODO https://<project>.web.app`. No login is needed, because the app signs you in anonymously.
+**Live demo:** https://configshield.web.app. No login is needed, because the app signs you in anonymously.
 
 ## Requirements
 - Chrome Desktop **139 or later** (Windows, macOS, Linux or ChromeOS).
@@ -23,6 +23,6 @@
 See the [README](../README.md#run-it-locally). `npm test` runs 49 unit and integration tests and needs no Firebase project. Without a `.env.local`, `npm run dev` starts in **local-only mode**: rules, the strict scrub, the baseline audit and Gemini Nano work, and cloud features are labelled as disabled.
 
 ## Notes
-- App Check uses the **debug provider** on the judging build, which the contest rules accept.
+- The live site protects AI Logic with **App Check (reCAPTCHA Enterprise)**, which works invisibly with no challenge to solve. Local development uses an App Check debug token instead.
 - All sample data is fictitious: RFC 5737 documentation IPs and `.example` domains.
 - The project stays free to use and unrestricted until the end of the Judging Period.

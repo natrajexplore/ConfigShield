@@ -1,13 +1,13 @@
 # Devpost submission text — ConfigShield
 
-> Copy each section into the matching Devpost field. Replace the `TODO` links before submitting.
+> Copy each section into the matching Devpost field. Replace the remaining `TODO` (video link) before submitting.
 
 **Tagline:** Audit your router and firewall configs with AI, without your secrets ever leaving the laptop.
 
 **Platform category:** Web (Chrome)
 
 **Links**
-- Live demo: `TODO https://<project>.web.app`
+- Live demo: https://configshield.web.app
 - Code (public, Apache-2.0): https://github.com/natrajexplore/ConfigShield
 - Video (YouTube, public, ≤ 3 min): `TODO`
 
@@ -39,7 +39,7 @@ There is also an **Air-gapped mode** that runs the whole audit on Gemini Nano, f
   - Local auditor: `InferenceMode.ONLY_ON_DEVICE` for air-gapped mode, with prompts chunked to fit Nano's 9,216-token window.
 - `initializeDeviceModel()` runs on a user click with a download progress bar.
 - `response.inferenceSource` drives the live **ON-DEVICE / CLOUD** badge on every stage.
-- **App Check** (reCAPTCHA Enterprise, debug provider for judging), **Anonymous Auth**, **Firestore** (sanitized reports only, enforced by field allow-list rules), and **Remote Config** (cloud model name, chunk size, findings cap, and a kill switch that forces on-device auditing).
+- **App Check** (reCAPTCHA Enterprise on the live site, a debug token for local development), **Anonymous Auth**, **Firestore** (sanitized reports only, enforced by field allow-list rules), and **Remote Config** (cloud model name, chunk size, findings cap, and a kill switch that forces on-device auditing).
 - Vite + TypeScript, no framework. **49 Vitest tests**, including pipeline integration tests that mock the models and assert that the prompt sent to cloud inference contains none of the sample's secrets, IPs, people or circuit IDs.
 - Hardening: model output is coerced to the schema's enums before rendering, so it can't inject markup; prompts treat the config as untrusted data; and Firestore rules type- and size-check every field.
 
